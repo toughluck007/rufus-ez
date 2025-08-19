@@ -31,6 +31,7 @@ extern char* ini_file;
 #define SETTING_ADVANCED_MODE               "AdvancedMode"
 #define SETTING_ADVANCED_MODE_DEVICE        "ShowAdvancedDriveProperties"
 #define SETTING_ADVANCED_MODE_FORMAT        "ShowAdvancedFormatOptions"
+#define SETTING_ADVANCED_MODE_EXTRAS        "ShowAdvancedExtrasOptions"
 #define SETTING_COMM_CHECK                  "CommCheck64"
 #define SETTING_DEFAULT_THREAD_PRIORITY     "DefaultThreadPriority"
 #define SETTING_DISABLE_DARK_MODE           "DisableDarkMode"

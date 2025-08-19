@@ -82,15 +82,15 @@ enum update_progress_type {
 // This allows ETA to change approximately once per second.
 #define ETA_REFRESH_INTERVAL 990
 
-extern HWND hMultiToolbar, hSaveToolbar, hHashToolbar, hAdvancedDeviceToolbar, hAdvancedFormatToolbar;
+extern HWND hMultiToolbar, hSaveToolbar, hHashToolbar, hAdvancedDeviceToolbar, hAdvancedFormatToolbar, hAdvancedExtrasToolbar;
 extern HFONT hInfoFont;
 extern UINT_PTR UM_LANGUAGE_MENU_MAX;
-extern BOOL advanced_mode_device, advanced_mode_format, force_large_fat32, app_changed_size;
+extern BOOL advanced_mode_device, advanced_mode_format, advanced_mode_extras, force_large_fat32, app_changed_size;
 extern loc_cmd* selected_locale;
 extern uint64_t persistence_size;
 extern const char *sfd_name, *flash_type[BADLOCKS_PATTERN_TYPES];
 extern char *short_image_path, image_option_txt[128];
-extern int advanced_device_section_height, advanced_format_section_height, persistence_unit_selection;
+extern int advanced_device_section_height, advanced_format_section_height, advanced_extras_section_height, persistence_unit_selection;
 extern int selection_default, cbw, ddw, ddbh, bh, update_progress_type;
 
 extern void SetAccessibleName(HWND hCtrl, const char* name);
@@ -107,6 +107,7 @@ extern void SetPersistenceSize(void);
 extern void TogglePersistenceControls(BOOL display);
 extern void ToggleAdvancedDeviceOptions(BOOL enable);
 extern void ToggleAdvancedFormatOptions(BOOL enable);
+extern void ToggleAdvancedExtrasOptions(BOOL enable);
 extern void ToggleImageOptions(void);
 extern void CreateSmallButtons(HWND hDlg);
 extern void CreateAdditionalControls(HWND hDlg);
