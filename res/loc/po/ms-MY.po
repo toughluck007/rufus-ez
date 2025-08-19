@@ -1945,3 +1945,27 @@ msgstr "Muat turun rasmi ISO runcit Microsoft Windows"
 #. • MSG_922
 msgid "Download UEFI Shell ISOs"
 msgstr "Muat turun ISO Shell UEFI"
+
+#. • MSG_400
+msgid "advanced extras options"
+msgstr ""
+
+#. • IDD_DIALOG → IDC_ADVANCED_EXTRAS_OPTIONS
+msgid "Show advanced extras options"
+msgstr ""
+
+#. • IDD_DIALOG → IDC_DETECT_FAKE_DRIVES
+msgid "Fake drive detection"
+msgstr ""
+
+#. • IDD_DIALOG → IDC_ENABLE_VHD
+msgid "VHD detection"
+msgstr ""
+
+#. • IDD_DIALOG → IDC_ENABLE_VMDK
+msgid "VMWare disk detection"
+msgstr ""
+
+#. • IDD_DIALOG → IDC_ALLOW_DUAL_EFI_BIOS
+msgid "Dual UEFI/BIOS mode"
+msgstr ""

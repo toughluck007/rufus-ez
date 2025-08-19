@@ -75,6 +75,12 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,231,216,10
     CONTROL         "Check device for bad blocks",IDC_BAD_BLOCKS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,241,112,10
     COMBOBOX        IDC_NB_PASSES,128,241,96,10,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Show advanced extras options",IDC_ADVANCED_EXTRAS_OPTIONS,
+                    "Button",BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP,8,254,216,10
+    CONTROL         "Fake drive detection",IDC_DETECT_FAKE_DRIVES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,264,216,10
+    CONTROL         "VHD detection",IDC_ENABLE_VHD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,274,216,10
+    CONTROL         "VMWare disk detection",IDC_ENABLE_VMDK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,284,216,10
+    CONTROL         "Dual UEFI/BIOS mode",IDC_ALLOW_DUAL_EFI_BIOS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,294,216,10
     LTEXT           "Status",IDS_STATUS_TXT,8,254,23,9,NOT WS_GROUP
     CONTROL         "",IDC_PROGRESS,"msctls_progress32",PBS_SMOOTH | WS_BORDER,8,273,216,9
     PUSHBUTTON      "Multi Toolbar",IDC_ABOUT,8,294,74,10,NOT WS_VISIBLE
@@ -428,7 +434,7 @@ BEGIN
             VALUE "FileDescription", "Rufus"
             VALUE "FileVersion", "4.10.2271"
             VALUE "InternalName", "Rufus"
-            VALUE "LegalCopyright", "© 2011-2025 Pete Batard (GPL v3)"
+            VALUE "LegalCopyright", "Â© 2011-2025 Pete Batard (GPL v3)"
             VALUE "LegalTrademarks", "https://www.gnu.org/licenses/gpl-3.0.html"
             VALUE "OriginalFilename", "rufus-4.10.exe"
             VALUE "ProductName", "Rufus"

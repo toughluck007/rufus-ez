@@ -111,7 +111,7 @@ extern const char *bootmgr_efi_name, *efi_dirname, *efi_bootname[ARCH_MAX];
 OPENED_LIBRARIES_VARS;
 RUFUS_UPDATE update = { { 0,0,0 },{ 0,0 }, NULL, NULL };
 HINSTANCE hMainInstance;
-HWND hMainDialog, hMultiToolbar, hSaveToolbar, hHashToolbar, hAdvancedDeviceToolbar, hAdvancedFormatToolbar, hUpdatesDlg = NULL;
+HWND hMainDialog, hMultiToolbar, hSaveToolbar, hHashToolbar, hAdvancedDeviceToolbar, hAdvancedFormatToolbar, hAdvancedExtrasToolbar, hUpdatesDlg = NULL;
 HFONT hInfoFont = NULL, hSectionHeaderFont = NULL;
 HICON hSmallIcon, hBigIcon = NULL;
 uint8_t image_options = IMOP_WINTOGO;
@@ -127,7 +127,7 @@ HANDLE dialog_handle = NULL, format_thread = NULL;
 BOOL is_x86_64, use_own_c32[NB_OLD_C32] = { FALSE, FALSE }, mbr_selected_by_user = FALSE, lock_drive = TRUE;
 BOOL op_in_progress = TRUE, right_to_left_mode = FALSE, has_uefi_csm = FALSE, its_a_me_mario = FALSE;
 BOOL enable_HDDs = FALSE, enable_VHDs = TRUE, enable_ntfs_compression = FALSE, no_confirmation_on_cancel = FALSE;
-BOOL advanced_mode_device, advanced_mode_format, allow_dual_uefi_bios, detect_fakes, enable_vmdk, force_large_fat32;
+BOOL advanced_mode_device, advanced_mode_format, advanced_mode_extras, allow_dual_uefi_bios, detect_fakes, enable_vmdk, force_large_fat32;
 BOOL usb_debug, use_fake_units, preserve_timestamps = FALSE, fast_zeroing = FALSE, app_changed_size = FALSE;
 BOOL zero_drive = FALSE, list_non_usb_removable_drives = FALSE, enable_file_indexing, large_drive = FALSE;
 BOOL write_as_image = FALSE, write_as_esp = FALSE, use_vds = FALSE, ignore_boot_marker = FALSE, save_image = FALSE;
@@ -864,12 +864,17 @@ void EnableControls(BOOL enable, BOOL remove_checkboxes)
 
 	// The following only get disabled on format/hash and otherwise remain enabled,
 	// even if no device or image are selected
-	EnableWindow(hDeviceList, enable);
-	EnableWindow(hBootType, enable);
-	EnableWindow(hSelectImage, enable);
-	EnableWindow(GetDlgItem(hMainDialog, IDC_LIST_USB_HDD), enable);
-	EnableWindow(hAdvancedDeviceToolbar, enable);
-	EnableWindow(hAdvancedFormatToolbar, enable);
+        EnableWindow(hDeviceList, enable);
+        EnableWindow(hBootType, enable);
+        EnableWindow(hSelectImage, enable);
+        EnableWindow(GetDlgItem(hMainDialog, IDC_LIST_USB_HDD), enable);
+        EnableWindow(GetDlgItem(hMainDialog, IDC_DETECT_FAKE_DRIVES), enable);
+        EnableWindow(GetDlgItem(hMainDialog, IDC_ENABLE_VHD), enable);
+        EnableWindow(GetDlgItem(hMainDialog, IDC_ENABLE_VMDK), enable);
+        EnableWindow(GetDlgItem(hMainDialog, IDC_ALLOW_DUAL_EFI_BIOS), enable);
+        EnableWindow(hAdvancedDeviceToolbar, enable);
+        EnableWindow(hAdvancedFormatToolbar, enable);
+        EnableWindow(hAdvancedExtrasToolbar, enable);
 	SendMessage(hMultiToolbar, TB_ENABLEBUTTON, (WPARAM)IDC_LANG, (LPARAM)enable);
 	SendMessage(hMultiToolbar, TB_ENABLEBUTTON, (WPARAM)IDC_ABOUT, (LPARAM)enable);
 	SendMessage(hMultiToolbar, TB_ENABLEBUTTON, (WPARAM)IDC_SETTINGS, (LPARAM)enable);
@@ -2186,15 +2191,20 @@ static void InitDialog(HWND hDlg)
 	CreateTooltip(hLabel, lmprintf(MSG_159), -1);
 	CreateTooltip(hAdvancedDeviceToolbar, lmprintf(MSG_160), -1);
 	CreateTooltip(hAdvancedFormatToolbar, lmprintf(MSG_160), -1);
-	CreateTooltip(GetDlgItem(hDlg, IDC_BAD_BLOCKS), lmprintf(MSG_161), -1);
-	CreateTooltip(GetDlgItem(hDlg, IDC_QUICK_FORMAT), lmprintf(MSG_162), -1);
-	CreateTooltip(hBootType, lmprintf(MSG_164), -1);
-	CreateTooltip(hSelectImage, lmprintf(MSG_165), -1);
-	CreateTooltip(GetDlgItem(hDlg, IDC_EXTENDED_LABEL), lmprintf(MSG_166), 10000);
-	CreateTooltip(GetDlgItem(hDlg, IDC_UEFI_MEDIA_VALIDATION), lmprintf(MSG_167), 10000);
-	CreateTooltip(GetDlgItem(hDlg, IDC_OLD_BIOS_FIXES), lmprintf(MSG_169), -1);
-	CreateTooltip(GetDlgItem(hDlg, IDC_LIST_USB_HDD), lmprintf(MSG_170), -1);
-	CreateTooltip(hStart, lmprintf(MSG_171), -1);
+        CreateTooltip(GetDlgItem(hDlg, IDC_BAD_BLOCKS), lmprintf(MSG_161), -1);
+        CreateTooltip(GetDlgItem(hDlg, IDC_QUICK_FORMAT), lmprintf(MSG_162), -1);
+        CreateTooltip(hBootType, lmprintf(MSG_164), -1);
+        CreateTooltip(hSelectImage, lmprintf(MSG_165), -1);
+        CreateTooltip(GetDlgItem(hDlg, IDC_EXTENDED_LABEL), lmprintf(MSG_166), 10000);
+        CreateTooltip(GetDlgItem(hDlg, IDC_UEFI_MEDIA_VALIDATION), lmprintf(MSG_167), 10000);
+        CreateTooltip(GetDlgItem(hDlg, IDC_OLD_BIOS_FIXES), lmprintf(MSG_169), -1);
+        CreateTooltip(GetDlgItem(hDlg, IDC_LIST_USB_HDD), lmprintf(MSG_170), -1);
+        CreateTooltip(hAdvancedExtrasToolbar, lmprintf(MSG_160), -1);
+        CreateTooltip(GetDlgItem(hDlg, IDC_DETECT_FAKE_DRIVES), lmprintf(MSG_256), -1);
+        CreateTooltip(GetDlgItem(hDlg, IDC_ENABLE_VHD), lmprintf(MSG_308), -1);
+        CreateTooltip(GetDlgItem(hDlg, IDC_ENABLE_VMDK), lmprintf(MSG_265), -1);
+        CreateTooltip(GetDlgItem(hDlg, IDC_ALLOW_DUAL_EFI_BIOS), lmprintf(MSG_266), -1);
+        CreateTooltip(hStart, lmprintf(MSG_171), -1);
 	CreateTooltip(hPartitionScheme, lmprintf(MSG_163), -1);
 	CreateTooltip(hTargetSystem, lmprintf(MSG_150), 30000);
 	CreateTooltip(GetDlgItem(hDlg, IDS_CSM_HELP_TXT), lmprintf(MSG_151), 30000);
@@ -2205,18 +2215,24 @@ static void InitDialog(HWND hDlg)
 
 	if (!advanced_mode_device)	// Hide as needed, since we display the advanced controls by default
 		ToggleAdvancedDeviceOptions(FALSE);
-	if (!advanced_mode_format)
-		ToggleAdvancedFormatOptions(FALSE);
-	ToggleImageOptions();
+        if (!advanced_mode_format)
+                ToggleAdvancedFormatOptions(FALSE);
+        if (!advanced_mode_extras)
+                ToggleAdvancedExtrasOptions(FALSE);
+        ToggleImageOptions();
 
-	// Process commandline parameters
+        // Process commandline parameters
 	if (img_provided) {
 		// Simulate a button click for image selection
 		PostMessage(hDlg, WM_COMMAND, IDC_SELECT, 0);
 	}
 	SetBootTypeDropdownWidth();
 
-	CheckDlgButton(hMainDialog, IDC_LIST_USB_HDD, enable_HDDs ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hMainDialog, IDC_LIST_USB_HDD, enable_HDDs ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hMainDialog, IDC_DETECT_FAKE_DRIVES, detect_fakes ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hMainDialog, IDC_ENABLE_VHD, enable_VHDs ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hMainDialog, IDC_ENABLE_VMDK, enable_vmdk ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hMainDialog, IDC_ALLOW_DUAL_EFI_BIOS, allow_dual_uefi_bios ? BST_CHECKED : BST_UNCHECKED);
 
 	PrintInfo(0, MSG_210);
 }
@@ -2405,17 +2421,22 @@ static INT_PTR CALLBACK MainCallback(HWND hDlg, UINT message, WPARAM wParam, LPA
 			SendMessage(hMainDialog, WM_COMMAND, (CBN_SELCHANGE_INTERNAL<<16) | IDC_FILE_SYSTEM,
 				ComboBox_GetCurSel(hFileSystem));
 			break;
-		case IDC_ADVANCED_FORMAT_OPTIONS:
-			advanced_mode_format = !advanced_mode_format;
-			WriteSettingBool(SETTING_ADVANCED_MODE_FORMAT, advanced_mode_format);
-			ToggleAdvancedFormatOptions(advanced_mode_format);
-			if (selected_fs == FS_UNKNOWN)
-				selected_fs = (int)ComboBox_GetCurItemData(hFileSystem);
-			SetFileSystemAndClusterSize(NULL);
-			SendMessage(hMainDialog, WM_COMMAND, (CBN_SELCHANGE_INTERNAL << 16) | IDC_FILE_SYSTEM,
-				ComboBox_GetCurSel(hFileSystem));
-			break;
-		case IDC_LABEL:
+                case IDC_ADVANCED_FORMAT_OPTIONS:
+                        advanced_mode_format = !advanced_mode_format;
+                        WriteSettingBool(SETTING_ADVANCED_MODE_FORMAT, advanced_mode_format);
+                        ToggleAdvancedFormatOptions(advanced_mode_format);
+                        if (selected_fs == FS_UNKNOWN)
+                                selected_fs = (int)ComboBox_GetCurItemData(hFileSystem);
+                        SetFileSystemAndClusterSize(NULL);
+                        SendMessage(hMainDialog, WM_COMMAND, (CBN_SELCHANGE_INTERNAL << 16) | IDC_FILE_SYSTEM,
+                                ComboBox_GetCurSel(hFileSystem));
+                        break;
+                case IDC_ADVANCED_EXTRAS_OPTIONS:
+                        advanced_mode_extras = !advanced_mode_extras;
+                        WriteSettingBool(SETTING_ADVANCED_MODE_EXTRAS, advanced_mode_extras);
+                        ToggleAdvancedExtrasOptions(advanced_mode_extras);
+                        break;
+                case IDC_LABEL:
 			if (HIWORD(wParam) == EN_CHANGE) {
 				// We will get EN_CHANGE when we change the label automatically, so we need to detect that
 				if (!app_changed_label)
@@ -2617,16 +2638,48 @@ static INT_PTR CALLBACK MainCallback(HWND hDlg, UINT message, WPARAM wParam, LPA
 //				WriteSettingBool(SETTING_ENABLE_RUNTIME_VALIDATION, validate_md5sum);
 			}
 			break;
-		case IDC_LIST_USB_HDD:
-			if ((HIWORD(wParam)) == BN_CLICKED) {
-				enable_HDDs = !enable_HDDs;
-				PrintStatusTimeout(lmprintf(MSG_253), enable_HDDs);
-				GetDevices(0);
-			}
-			break;
-		case IDC_START:
-			if (format_thread != NULL)
-				return (INT_PTR)TRUE;
+                case IDC_LIST_USB_HDD:
+                        if ((HIWORD(wParam)) == BN_CLICKED) {
+                                enable_HDDs = !enable_HDDs;
+                                PrintStatusTimeout(lmprintf(MSG_253), enable_HDDs);
+                                GetDevices(0);
+                        }
+                        break;
+                case IDC_DETECT_FAKE_DRIVES:
+                        if ((HIWORD(wParam)) == BN_CLICKED) {
+                                detect_fakes = IsChecked(IDC_DETECT_FAKE_DRIVES);
+                                WriteSettingBool(SETTING_DISABLE_FAKE_DRIVES_CHECK, !detect_fakes);
+                                PrintStatusTimeout(lmprintf(MSG_256), detect_fakes);
+                        }
+                        break;
+                case IDC_ENABLE_VHD:
+                        if ((HIWORD(wParam)) == BN_CLICKED) {
+                                enable_VHDs = IsChecked(IDC_ENABLE_VHD);
+                                WriteSettingBool(SETTING_DISABLE_VHDS, !enable_VHDs);
+                                PrintStatusTimeout(lmprintf(MSG_308), enable_VHDs);
+                                GetDevices(0);
+                        }
+                        break;
+                case IDC_ENABLE_VMDK:
+                        if ((HIWORD(wParam)) == BN_CLICKED) {
+                                enable_vmdk = IsChecked(IDC_ENABLE_VMDK);
+                                WriteSettingBool(SETTING_ENABLE_VMDK_DETECTION, enable_vmdk);
+                                PrintStatusTimeout(lmprintf(MSG_265), enable_vmdk);
+                                GetDevices(0);
+                        }
+                        break;
+                case IDC_ALLOW_DUAL_EFI_BIOS:
+                        if ((HIWORD(wParam)) == BN_CLICKED) {
+                                allow_dual_uefi_bios = IsChecked(IDC_ALLOW_DUAL_EFI_BIOS);
+                                WriteSettingBool(SETTING_ENABLE_WIN_DUAL_EFI_BIOS, allow_dual_uefi_bios);
+                                PrintStatusTimeout(lmprintf(MSG_266), allow_dual_uefi_bios);
+                                SetPartitionSchemeAndTargetSystem(FALSE);
+                                SetFileSystemAndClusterSize(NULL);
+                        }
+                        break;
+                case IDC_START:
+                        if (format_thread != NULL)
+                                return (INT_PTR)TRUE;
 			// Just in case
 			boot_type = (int)ComboBox_GetCurItemData(hBootType);
 			partition_type = (int)ComboBox_GetCurItemData(hPartitionScheme);
@@ -3617,8 +3670,9 @@ skip_args_processing:
 	}
 
 	// Restore user-saved settings
-	advanced_mode_device = ReadSettingBool(SETTING_ADVANCED_MODE_DEVICE);
-	advanced_mode_format = ReadSettingBool(SETTING_ADVANCED_MODE_FORMAT);
+        advanced_mode_device = ReadSettingBool(SETTING_ADVANCED_MODE_DEVICE);
+        advanced_mode_format = ReadSettingBool(SETTING_ADVANCED_MODE_FORMAT);
+        advanced_mode_extras = ReadSettingBool(SETTING_ADVANCED_MODE_EXTRAS);
 	preserve_timestamps = ReadSettingBool(SETTING_PRESERVE_TIMESTAMPS);
 	use_fake_units = !ReadSettingBool(SETTING_USE_PROPER_SIZE_UNITS);
 	is_vds_available = IsVdsAvailable(FALSE);
@@ -3937,12 +3991,13 @@ extern int TestHashes(void);
 			// more capacity than they already have by looping over the flash. This check which
 			// is enabled by default is performed by writing the block number sequence and reading
 			// it back during the bad block check.
-			if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'B')) {
-				detect_fakes = !detect_fakes;
-				WriteSettingBool(SETTING_DISABLE_FAKE_DRIVES_CHECK, !detect_fakes);
-				PrintStatusTimeout(lmprintf(MSG_256), detect_fakes);
-				continue;
-			}
+                        if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'B')) {
+                                detect_fakes = !detect_fakes;
+                                WriteSettingBool(SETTING_DISABLE_FAKE_DRIVES_CHECK, !detect_fakes);
+                                PrintStatusTimeout(lmprintf(MSG_256), detect_fakes);
+                                CheckDlgButton(hMainDialog, IDC_DETECT_FAKE_DRIVES, detect_fakes ? BST_CHECKED : BST_UNCHECKED);
+                                continue;
+                        }
 			// Alt-C => Cycle USB port for currently selected device
 			if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'C')) {
 				int index = ComboBox_GetCurSel(hDeviceList);
@@ -3959,14 +4014,15 @@ extern int TestHashes(void);
 				continue;
 			}
 			// Alt-E => Enhanced installation mode (allow dual UEFI/BIOS mode and FAT32 for Windows)
-			if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'E')) {
-				allow_dual_uefi_bios = !allow_dual_uefi_bios;
-				WriteSettingBool(SETTING_ENABLE_WIN_DUAL_EFI_BIOS, allow_dual_uefi_bios);
-				PrintStatusTimeout(lmprintf(MSG_266), allow_dual_uefi_bios);
-				SetPartitionSchemeAndTargetSystem(FALSE);
-				SetFileSystemAndClusterSize(NULL);
-				continue;
-			}
+                        if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'E')) {
+                                allow_dual_uefi_bios = !allow_dual_uefi_bios;
+                                WriteSettingBool(SETTING_ENABLE_WIN_DUAL_EFI_BIOS, allow_dual_uefi_bios);
+                                PrintStatusTimeout(lmprintf(MSG_266), allow_dual_uefi_bios);
+                                SetPartitionSchemeAndTargetSystem(FALSE);
+                                SetFileSystemAndClusterSize(NULL);
+                                CheckDlgButton(hMainDialog, IDC_ALLOW_DUAL_EFI_BIOS, allow_dual_uefi_bios ? BST_CHECKED : BST_UNCHECKED);
+                                continue;
+                        }
 			// Alt-F => Toggle detection of USB HDDs
 			// By default Rufus does not list USB HDDs. This is a safety feature aimed at avoiding
 			// unintentional formatting of backup drives instead of USB keys.
@@ -3980,13 +4036,14 @@ extern int TestHashes(void);
 			}
 			// Alt-G => Toggle detection of Virtual Disks
 			// By default Rufus list Virtual Disks but some people use them for backup.
-			if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'G')) {
-				enable_VHDs = !enable_VHDs;
-				WriteSettingBool(SETTING_DISABLE_VHDS, !enable_VHDs);
-				PrintStatusTimeout(lmprintf(MSG_308), enable_VHDs);
-				GetDevices(0);
-				continue;
-			}
+                        if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'G')) {
+                                enable_VHDs = !enable_VHDs;
+                                WriteSettingBool(SETTING_DISABLE_VHDS, !enable_VHDs);
+                                PrintStatusTimeout(lmprintf(MSG_308), enable_VHDs);
+                                GetDevices(0);
+                                CheckDlgButton(hMainDialog, IDC_ENABLE_VHD, enable_VHDs ? BST_CHECKED : BST_UNCHECKED);
+                                continue;
+                        }
 			// Alt-H => Toggle computation of SHA512 digest
 			if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'H')) {
 				enable_extra_hashes = !enable_extra_hashes;
@@ -4107,13 +4164,14 @@ extern int TestHashes(void);
 				continue;
 			}
 			// Alt-W => Enable VMWare disk detection
-			if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'W')) {
-				enable_vmdk = !enable_vmdk;
-				WriteSettingBool(SETTING_ENABLE_VMDK_DETECTION, enable_vmdk);
-				PrintStatusTimeout(lmprintf(MSG_265), enable_vmdk);
-				GetDevices(0);
-				continue;
-			}
+                        if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'W')) {
+                                enable_vmdk = !enable_vmdk;
+                                WriteSettingBool(SETTING_ENABLE_VMDK_DETECTION, enable_vmdk);
+                                PrintStatusTimeout(lmprintf(MSG_265), enable_vmdk);
+                                GetDevices(0);
+                                CheckDlgButton(hMainDialog, IDC_ENABLE_VMDK, enable_vmdk ? BST_CHECKED : BST_UNCHECKED);
+                                continue;
+                        }
 			// Alt-X => Delete the NoDriveTypeAutorun key on exit (useful if the app crashed)
 			// This key is used to disable Windows popup messages when an USB drive is plugged in.
 			if ((msg.message == WM_SYSKEYDOWN) && (msg.wParam == 'X')) {

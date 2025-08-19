@@ -49,7 +49,7 @@ extern BOOL use_vds, appstore_version;
 extern int imop_win_sel;
 extern char *unattend_xml_path, *archive_path;
 int update_progress_type = UPT_PERCENT;
-int advanced_device_section_height, advanced_format_section_height;
+int advanced_device_section_height, advanced_format_section_height, advanced_extras_section_height;
 // (empty) check box width, (empty) drop down width, button height (for and without dropdown match)
 int cbw, ddw, ddbh = 0, bh = 0;
 // Row Height, DropDown Height, Main button width, half dropdown width, full dropdown width
@@ -57,7 +57,7 @@ static int rh, ddh, bw, hw, fw;
 // See GetFullWidth() for details on how these values are used
 static int sw, mw, bsw, sbw, ssw, tw, dbw;
 static WNDPROC progress_original_proc = NULL;
-static wchar_t wtbtext[2][128];
+static wchar_t wtbtext[3][128];
 static IAccPropServices* pfaps = NULL;
 
 /*
@@ -356,17 +356,26 @@ void PositionMainControls(HWND hDlg)
 	MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
 	advanced_device_section_height = rc.bottom - advanced_device_section_height;
 
-	hCtrl = GetDlgItem(hDlg, IDC_QUICK_FORMAT);
-	GetWindowRect(hCtrl, &rc);
-	MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
-	advanced_format_section_height = rc.top;
-	hCtrl = GetDlgItem(hDlg, IDC_BAD_BLOCKS);
-	GetWindowRect(hCtrl, &rc);
-	MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
-	advanced_format_section_height = rc.bottom - advanced_format_section_height;
+    hCtrl = GetDlgItem(hDlg, IDC_QUICK_FORMAT);
+    GetWindowRect(hCtrl, &rc);
+    MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
+    advanced_format_section_height = rc.top;
+    hCtrl = GetDlgItem(hDlg, IDC_BAD_BLOCKS);
+    GetWindowRect(hCtrl, &rc);
+    MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
+    advanced_format_section_height = rc.bottom - advanced_format_section_height;
 
-	// Get the vertical position of the sections text
-	hCtrl = GetDlgItem(hDlg, IDS_DRIVE_PROPERTIES_TXT);
+    hCtrl = GetDlgItem(hDlg, IDC_DETECT_FAKE_DRIVES);
+    GetWindowRect(hCtrl, &rc);
+    MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
+    advanced_extras_section_height = rc.top;
+    hCtrl = GetDlgItem(hDlg, IDC_ALLOW_DUAL_EFI_BIOS);
+    GetWindowRect(hCtrl, &rc);
+    MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
+    advanced_extras_section_height = rc.bottom - advanced_extras_section_height;
+
+    // Get the vertical position of the sections text
+    hCtrl = GetDlgItem(hDlg, IDS_DRIVE_PROPERTIES_TXT);
 	GetWindowRect(hCtrl, &rc);
 	MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
 	sz = GetTextSize(hCtrl, NULL);
@@ -547,10 +556,11 @@ void AdjustForLowDPI(HWND hDlg)
 		}
 	}
 
-	section_vpos[1] += 9 * ddy;
-	section_vpos[2] += 16 * ddy + 1;
-	advanced_device_section_height += 3 * ddy;
-	advanced_format_section_height += 3 * ddy + 1;
+        section_vpos[1] += 9 * ddy;
+        section_vpos[2] += 21 * ddy + 1;
+        advanced_device_section_height += 3 * ddy;
+        advanced_format_section_height += 3 * ddy + 1;
+        advanced_extras_section_height += 3 * ddy;
 
 	ResizeDialogs(dy + 2 * ddy);
 	InvalidateRect(hDlg, NULL, TRUE);
@@ -675,7 +685,42 @@ void ToggleAdvancedFormatOptions(BOOL enable)
 	ResizeDialogs(shift);
 
 	// Never hurts to force Windows' hand
-	InvalidateRect(hMainDialog, NULL, TRUE);
+        InvalidateRect(hMainDialog, NULL, TRUE);
+}
+
+void ToggleAdvancedExtrasOptions(BOOL enable)
+{
+        RECT rc;
+        SIZE sz;
+        TBBUTTONINFO button_info;
+        int i, shift = advanced_extras_section_height;
+
+        if (!enable)
+                shift = -shift;
+        section_vpos[2] += shift;
+
+        utf8_to_wchar_no_alloc(lmprintf((enable) ? MSG_122 : MSG_121, lmprintf(MSG_400)), wtbtext[2], ARRAYSIZE(wtbtext[0]));
+        button_info.cbSize = sizeof(button_info);
+        button_info.dwMask = TBIF_TEXT;
+        button_info.pszText = wtbtext[2];
+        SendMessage(hAdvancedExtrasToolbar, TB_SETBUTTONINFO, (WPARAM)IDC_ADVANCED_EXTRAS_OPTIONS, (LPARAM)&button_info);
+        SendMessage(hAdvancedExtrasToolbar, TB_SETIMAGELIST, (WPARAM)0, (LPARAM)((enable) ? hUpImageList : hDownImageList));
+        GetWindowRect(hAdvancedExtrasToolbar, &rc);
+        MapWindowPoints(NULL, hMainDialog, (POINT*)&rc, 2);
+        SendMessage(hAdvancedExtrasToolbar, TB_GETIDEALSIZE, (WPARAM)FALSE, (LPARAM)&sz);
+        if (sz.cx < 16)
+                sz.cx = fw;
+        SetWindowPos(hAdvancedExtrasToolbar, hNBPasses, rc.left, rc.top, sz.cx, rc.bottom - rc.top, 0);
+
+        for (i = 0; i<ARRAYSIZE(advanced_extras_move_ids); i++)
+                MoveCtrlY(hMainDialog, advanced_extras_move_ids[i], shift);
+
+        for (i = 0; i<ARRAYSIZE(advanced_extras_toggle_ids); i++)
+                ShowWindow(GetDlgItem(hMainDialog, advanced_extras_toggle_ids[i]), enable ? SW_SHOW : SW_HIDE);
+
+        ResizeDialogs(shift);
+
+        InvalidateRect(hMainDialog, NULL, TRUE);
 }
 
 // Toggle the display of persistence unit dropdown and resize the size field
@@ -1103,28 +1148,47 @@ void CreateAdditionalControls(HWND hDlg)
 	SetWindowPos(hAdvancedDeviceToolbar, hTargetSystem, rc.left + toolbar_dx, rc.top, sz.cx, rc.bottom - rc.top, 0);
 	SetAccessibleName(hAdvancedDeviceToolbar, lmprintf(MSG_119));
 
-	utf8_to_wchar_no_alloc(lmprintf((advanced_mode_format) ? MSG_122 : MSG_121, lmprintf(MSG_120)), wtbtext[1], ARRAYSIZE(wtbtext[1]));
-	hAdvancedFormatToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, TOOLBAR_STYLE,
-		0, 0, 0, 0, hMainDialog, (HMENU)IDC_ADVANCED_FORMAT_TOOLBAR, hMainInstance, NULL);
-	SendMessage(hAdvancedFormatToolbar, CCM_SETVERSION, (WPARAM)6, 0);
-	memset(tbToolbarButtons, 0, sizeof(tbToolbarButtons));
-	tbToolbarButtons[0].idCommand = IDC_ADVANCED_FORMAT_OPTIONS;
-	tbToolbarButtons[0].fsStyle = BTNS_SHOWTEXT | BTNS_AUTOSIZE;
-	tbToolbarButtons[0].fsState = TBSTATE_ENABLED;
-	tbToolbarButtons[0].iString = (INT_PTR)wtbtext[1];
-	tbToolbarButtons[0].iBitmap = 0;
-	SendMessage(hAdvancedFormatToolbar, TB_SETIMAGELIST, (WPARAM)0, (LPARAM)hUpImageList);
-	SendMessage(hAdvancedFormatToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
-	SendMessage(hAdvancedFormatToolbar, TB_ADDBUTTONS, (WPARAM)1, (LPARAM)&tbToolbarButtons);
-	GetWindowRect(GetDlgItem(hDlg, IDC_ADVANCED_FORMAT_OPTIONS), &rc);
-	MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
-	SendMessage(hAdvancedFormatToolbar, TB_GETIDEALSIZE, (WPARAM)FALSE, (LPARAM)&sz);
-	SetWindowPos(hAdvancedFormatToolbar, hClusterSize, rc.left + toolbar_dx, rc.top, sz.cx, rc.bottom - rc.top, 0);
-	SetAccessibleName(hAdvancedFormatToolbar, lmprintf(MSG_120));
+        utf8_to_wchar_no_alloc(lmprintf((advanced_mode_format) ? MSG_122 : MSG_121, lmprintf(MSG_120)), wtbtext[1], ARRAYSIZE(wtbtext[1]));
+        hAdvancedFormatToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, TOOLBAR_STYLE,
+                0, 0, 0, 0, hMainDialog, (HMENU)IDC_ADVANCED_FORMAT_TOOLBAR, hMainInstance, NULL);
+        SendMessage(hAdvancedFormatToolbar, CCM_SETVERSION, (WPARAM)6, 0);
+        memset(tbToolbarButtons, 0, sizeof(tbToolbarButtons));
+        tbToolbarButtons[0].idCommand = IDC_ADVANCED_FORMAT_OPTIONS;
+        tbToolbarButtons[0].fsStyle = BTNS_SHOWTEXT | BTNS_AUTOSIZE;
+        tbToolbarButtons[0].fsState = TBSTATE_ENABLED;
+        tbToolbarButtons[0].iString = (INT_PTR)wtbtext[1];
+        tbToolbarButtons[0].iBitmap = 0;
+        SendMessage(hAdvancedFormatToolbar, TB_SETIMAGELIST, (WPARAM)0, (LPARAM)hUpImageList);
+        SendMessage(hAdvancedFormatToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+        SendMessage(hAdvancedFormatToolbar, TB_ADDBUTTONS, (WPARAM)1, (LPARAM)&tbToolbarButtons);
+        GetWindowRect(GetDlgItem(hDlg, IDC_ADVANCED_FORMAT_OPTIONS), &rc);
+        MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
+        SendMessage(hAdvancedFormatToolbar, TB_GETIDEALSIZE, (WPARAM)FALSE, (LPARAM)&sz);
+        SetWindowPos(hAdvancedFormatToolbar, hClusterSize, rc.left + toolbar_dx, rc.top, sz.cx, rc.bottom - rc.top, 0);
+        SetAccessibleName(hAdvancedFormatToolbar, lmprintf(MSG_120));
 
-	// Create the multi toolbar
-	hMultiToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, TOOLBAR_STYLE,
-		0, 0, 0, 0, hMainDialog, (HMENU)IDC_MULTI_TOOLBAR, hMainInstance, NULL);
+        utf8_to_wchar_no_alloc(lmprintf((advanced_mode_extras) ? MSG_122 : MSG_121, lmprintf(MSG_400)), wtbtext[2], ARRAYSIZE(wtbtext[2]));
+        hAdvancedExtrasToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, TOOLBAR_STYLE,
+                0, 0, 0, 0, hMainDialog, (HMENU)IDC_ADVANCED_EXTRAS_TOOLBAR, hMainInstance, NULL);
+        SendMessage(hAdvancedExtrasToolbar, CCM_SETVERSION, (WPARAM)6, 0);
+        memset(tbToolbarButtons, 0, sizeof(tbToolbarButtons));
+        tbToolbarButtons[0].idCommand = IDC_ADVANCED_EXTRAS_OPTIONS;
+        tbToolbarButtons[0].fsStyle = BTNS_SHOWTEXT | BTNS_AUTOSIZE;
+        tbToolbarButtons[0].fsState = TBSTATE_ENABLED;
+        tbToolbarButtons[0].iString = (INT_PTR)wtbtext[2];
+        tbToolbarButtons[0].iBitmap = 0;
+        SendMessage(hAdvancedExtrasToolbar, TB_SETIMAGELIST, (WPARAM)0, (LPARAM)hUpImageList);
+        SendMessage(hAdvancedExtrasToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+        SendMessage(hAdvancedExtrasToolbar, TB_ADDBUTTONS, (WPARAM)1, (LPARAM)&tbToolbarButtons);
+        GetWindowRect(GetDlgItem(hDlg, IDC_ADVANCED_EXTRAS_OPTIONS), &rc);
+        MapWindowPoints(NULL, hDlg, (POINT*)&rc, 2);
+        SendMessage(hAdvancedExtrasToolbar, TB_GETIDEALSIZE, (WPARAM)FALSE, (LPARAM)&sz);
+        SetWindowPos(hAdvancedExtrasToolbar, hNBPasses, rc.left + toolbar_dx, rc.top, sz.cx, rc.bottom - rc.top, 0);
+        SetAccessibleName(hAdvancedExtrasToolbar, lmprintf(MSG_400));
+
+        // Create the multi toolbar
+        hMultiToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, TOOLBAR_STYLE,
+                0, 0, 0, 0, hMainDialog, (HMENU)IDC_MULTI_TOOLBAR, hMainInstance, NULL);
 	hToolbarImageList = ImageList_Create(i16, i16, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, 8, 0);
 	for (i = 0; i < ARRAYSIZE(multitoolbar_icons); i++) {
 		buffer = GetResource(hMainInstance, MAKEINTRESOURCEA(multitoolbar_icons[i] + icon_offset),

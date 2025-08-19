@@ -192,6 +192,12 @@
 #define IDC_LIST_ITEM14                 1111
 #define IDC_LIST_ITEM15                 1112
 #define IDC_LIST_ITEMMAX                1113
+#define IDC_ADVANCED_EXTRAS_OPTIONS     1114
+#define IDC_DETECT_FAKE_DRIVES          1115
+#define IDC_ENABLE_VHD                  1116
+#define IDC_ENABLE_VMDK                 1117
+#define IDC_ALLOW_DUAL_EFI_BIOS         1118
+#define IDC_ADVANCED_EXTRAS_TOOLBAR     1119
 #define IDS_DEVICE_TXT                  2000
 #define IDS_PARTITION_TYPE_TXT          2001
 #define IDS_FILE_SYSTEM_TXT             2002
@@ -611,7 +617,8 @@
 #define MSG_397                         3397
 #define MSG_398                         3398
 #define MSG_399                         3399
-#define MSG_MAX                         3400
+#define MSG_400                         3400
+#define MSG_MAX                         3401
 
 // Next default values for new objects
 //
@@ -620,7 +627,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        505
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1114
+#define _APS_NEXT_CONTROL_VALUE         1120
 #define _APS_NEXT_SYMED_VALUE           4000
 #endif
 #endif
